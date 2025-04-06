@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 export const register: RequestHandler = async (req: Request, res: Response): Promise<any> => {
     try {
         const { name, email, password } = req.body;
-        let exists = await User.findOne({ where: { email } });
+        const exists = await User.findOne({ where: { email } });
         if (exists) {
             return error(res, { msg: "User already exists" });
         }
@@ -32,7 +32,7 @@ export const loginUser: RequestHandler = async (req, res): Promise<any> => {
             password,
         }: { email: string; password: string } = req.body;
 
-        let user = await User.findOne({ where: { email } });
+        const user: User | null = await User.findOne({ where: { email } });
         if (!user) {
             return error(res, { msg: "Invalid credentials!!" });
         }
