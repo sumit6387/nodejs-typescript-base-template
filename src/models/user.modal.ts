@@ -1,33 +1,35 @@
-import { Model, Table, Column, AutoIncrement, PrimaryKey, Unique, AllowNull } from "sequelize-typescript";
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IUser {
-    id?: number | null;
-    name: string;
-    email: string;
-    password: string;
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  profilePicture: string;
+  userType?: 'user' | 'admin';
+  phoneNumber?: string;
+  authId: string;
+  password: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  deletedAt?: Date;
 }
 
-@Table({
-    tableName: "users",
+const UserSchema = new Schema<IUser>(
+  {
+    name: { type: String, required: false },
+    email: { type: String, required: false },
+    phoneNumber: { type: String, required: false },
+    userType: { type: String, required: false, default: 'user' },
+    profilePicture: { type: String, required: false },
+    password: { type: String, required: false },
+    authId: { type: String, required: false },
+    deletedAt: { type: Date, required: false },
+  },
+  {
     timestamps: true,
-})
-export class User extends Model implements IUser {
-    @AutoIncrement
-    @PrimaryKey
-    @Column
-    id!: number;
+  }
+);
 
+UserSchema.index({ email: 1 });
+UserSchema.index({ phoneNumber: 1 });
 
-    @AllowNull(false)
-    @Column
-    name!: string;
-
-    @Unique
-    @AllowNull(false)
-    @Column
-    email!: string;
-
-    @AllowNull(false)
-    @Column
-    password!: string;
-}
+export const User = mongoose.model<IUser>('User', UserSchema);

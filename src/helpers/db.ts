@@ -1,16 +1,13 @@
-import { Sequelize } from "sequelize-typescript";
+import mongoose from 'mongoose';
 import dotenv from "dotenv";
-import { User } from "../models/user.modal";
-
 dotenv.config();
+export const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_DB_URI ?? "");
 
-const sequelize = new Sequelize({
-    database: process.env.DB_NAME,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    host: process.env.DB_HOST,
-    dialect: "mysql",
-    models: [User], // Path to models
-});
-
-export default sequelize;
+    console.log('✅ MongoDB connected');
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  }
+};
