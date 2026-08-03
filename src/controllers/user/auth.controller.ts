@@ -1,66 +1,36 @@
-import { Request, RequestHandler, Response } from "express";
-import { User } from "../../models";
-import bcrypt, { compare } from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { success, error } from "../../handlers";
-const JWT_SECRET = process.env.JWT_SECRET as string;
+import { logError, ResponseHandler } from '../../handlers';
+import { Request, Response } from 'express';
+import { User } from '../../models';
 
-export const register: RequestHandler = async (req: Request, res: Response): Promise<any> => {
+export class AuthController {
+  constructor() {}
+  public async register(req: Request, res: Response): Promise<void> {
     try {
-        const { name, email, password } = req.body;
-        let exists = await User.findOne({ where: { email } });
-        if (exists) {
-            return error(res, { msg: "User already exists" });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await User.create({ name, email, password: hashedPassword });
-
-        return success(res, { msg: "User registered", data: user });
-    } catch (err) {
-        console.log(err);
-        return error(res, {
-            msg: "Something went wrong",
+      let user = await User.findOne({ authId: req.authUser?.sub });
+      if (!user) {
+        user = await User.create({
+          authId: req.authUser?.sub,
+          email: req.authUser?.email,
+          phoneNumber: req.authUser?.phone_number,
+          userType: 'user',
+          name: '',
         });
+      }
+      const userData = await User.findOne({
+        _id: user?._id,
+        $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+      });
+      ResponseHandler.success(res, {
+        msg: 'User registered successfully',
+        data: userData,
+      });
+    } catch (error) {
+      logError(`/api/v1/users/auth/register`, 'POST', error as Error);
+      ResponseHandler.error(res, {
+        msg: 'Registration failed',
+        statusCode: 500,
+        error: [(error as Error).message],
+      });
     }
-};
-
-export const loginUser: RequestHandler = async (req, res): Promise<any> => {
-    try {
-        const {
-            email,
-            password,
-        }: { email: string; password: string } = req.body;
-
-        let user = await User.findOne({ where: { email } });
-        if (!user) {
-            return error(res, { msg: "Invalid credentials!!" });
-        }
-        const matchPassword = await compare(password, user.password);
-
-        if (!matchPassword) {
-            return error(res, { msg: "Invalid credentials!!" });
-        }
-        const data = {
-            user: {
-                id: user.id,
-            },
-        };
-
-        console.log(data);
-        const token = jwt.sign(data, JWT_SECRET);
-
-        return success(res, {
-            msg: "User logged in successfully!!",
-            data: {
-                token,
-                user
-            }
-        })
-    } catch (err) {
-        console.log(err);
-        return error(res, {
-            msg: "Something went wrong",
-        });
-    }
-};
+  }
+}

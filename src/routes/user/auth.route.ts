@@ -1,10 +1,21 @@
-import express from "express";
-import { loginUser, register } from "../../controllers/user/auth.controller";
-import { loginValidation, registerValidation } from "../../validations/auth.validation";
+import { Router } from 'express';
+import { AuthController } from '../../controllers/user/auth.controller';
+import { verifyToken } from '../../middlewares';
+export class AuthRoute {
+  public router: Router;
+  private authController: AuthController;
 
-const router = express.Router();
+  constructor() {
+    this.router = Router();
+    this.authController = new AuthController();
+    this.routes();
+  }
 
-router.post("/register", registerValidation, register);
-router.post("/login", loginValidation, loginUser);
-
-export default router;
+  private routes() {
+    this.router.post(
+      '/register',
+      verifyToken,
+      this.authController.register.bind(this.authController)
+    );
+  }
+}
